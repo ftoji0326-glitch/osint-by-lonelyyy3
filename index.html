@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MERIDIAN // ADVANCED OSINT RECON</title>
+    <style>
+        :root {
+            --bg-deep: #07090e;
+            --bg-panel: #0d111a;
+            --border: #1e293b;
+            --border-active: #38bdf8;
+            --text-main: #94a3b8;
+            --text-bright: #f8fafc;
+            --text-dim: #475569;
+            --cyan: #38bdf8;
+            --emerald: #10b981;
+            --amber: #f59e0b;
+            --rose: #f43f5e;
+            --font-mono: "JetBrains Mono", "Fira Code", monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            font-size: 13px;
+            line-height: 1.5;
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .title-block h1 {
+            color: var(--cyan);
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .title-block .subtitle {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+
+        .system-status {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .status-idle { color: var(--emerald); border-color: rgba(16, 185, 129, 0.3); }
+        .status-busy { color: var(--amber); border-color: rgba(245, 158, 11, 0.3); }
+        .status-error { color: var(--rose); border-color: rgba(244, 63, 94, 0.3); }
+
+        .search-panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            padding: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .search-panel input {
+            flex: 1;
+            background: #000;
+            border: 1px solid var(--border);
+            color: var(--text-bright);
+            padding: 10px 16px;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .search-panel input:focus {
+            border-color: var(--border-active);
+        }
+
+        .search-panel button {
+            background: #0284c7;
+            color: #fff;
+            border: none;
+            padding: 0 24px;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .search-panel button:hover {
+            background: var(--cyan);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .metric-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            padding: 14px;
+        }
+
+        .metric-title {
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .metric-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-bright);
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            min-height: 280px;
+        }
+
+        .panel-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-header h2 {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--cyan);
+            letter-spacing: 1px;
+        }
+
+        .panel-content {
+            padding: 16px;
+            flex: 1;
+            overflow-y: auto;
+            max-height: 380px;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .table-data {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table-data th, .table-data td {
+            text-align: left;
+            padding: 6px 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .table-data th {
+            color: var(--text-dim);
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .badge-ok { background: rgba(16, 185, 129, 0.2); color: var(--emerald); }
+        .badge-warn { background: rgba(245, 158, 11, 0.2); color: var(--amber); }
+        .badge-missing { background: rgba(244, 63, 94, 0.2); color: var(--rose); }
+
+        footer {
+            margin-top: 32px;
+            border-top: 1px solid var(--border);
+            padding-top: 14px;
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-dim);
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="title-block">
+                <h1>[G.U.N] :: СИСТЕМА ГЛУБОКОГО СБОРА СЕТЕВОЙ ТЕЛЕМЕТРИИ</h1>
+                <div class="subtitle">МОДУЛЬ РАЗВЕДКИ ПУБЛИЧНОГО КОНТУРА // ОРБИТАЛЬНЫЙ СЕРВЕР МЕРИДИАН</div>
+            </div>
+            <div id="sysStatus" class="system-status status-idle">КОНТУР ГОТОВ</div>
+        </header>
+
+        <section class="search-panel">
+            <input type="text" id="targetInput" placeholder="Введите целевой домен (пример: cloudflare.com)" autocomplete="off">
+            <button onclick="executeScan()">СКАНИРОВАТЬ</button>
+        </section>
+
+        <section class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-title">Целевой IP-адрес</div>
+                <div class="metric-value" id="valIp">—</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Провайдер / ASN</div>
+                <div class="metric-value" id="valAsn" style="font-size: 14px;">—</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Геолокация узла</div>
+                <div class="metric-value" id="valGeo">—</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">HTTP Статус / WAF</div>
+                <div class="metric-value" id="valHttp">—</div>
+            </div>
+        </section>
+
+        <section class="main-grid">
+            <!-- 01: DNS -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>01 // Ресурсные записи DNS</h2>
+                    <span id="dnsCount" class="badge badge-warn">ОЖИДАНИЕ</span>
+                </div>
+                <div class="panel-content">
+                    <table class="table-data" id="dnsTable">
+                        <thead>
+                            <tr>
+                                <th>Тип</th>
+                                <th>Запись</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dnsBody">
+                            <tr><td colspan="2" style="color: var(--text-dim);">Данные не собраны</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 02: SSL Certificate -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>02 // Сертификат безопасности TLS/SSL</h2>
+                    <span id="sslStatus" class="badge badge-warn">ОЖИДАНИЕ</span>
+                </div>
+                <div class="panel-content">
+                    <pre id="sslPre">Ожидание инициализации соединения...</pre>
+                </div>
+            </div>
+
+            <!-- 03: Security Headers -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>03 // Анализ HTTP-заголовков безопасности</h2>
+                    <span id="secScore" class="badge badge-warn">ОЖИДАНИЕ</span>
+                </div>
+                <div class="panel-content">
+                    <table class="table-data">
+                        <thead>
+                            <tr>
+                                <th>Заголовок</th>
+                                <th>Состояние</th>
+                            </tr>
+                        </thead>
+                        <tbody id="headersBody">
+                            <tr><td colspan="2" style="color: var(--text-dim);">Данные не собраны</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 04: Subdomains -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>04 // Обнаруженные поддомены (crt.sh)</h2>
+                    <span id="subCount" class="badge badge-warn">ОЖИДАНИЕ</span>
+                </div>
+                <div class="panel-content">
+                    <pre id="subdomainsPre">Ожидание запроса к логам прозрачности...</pre>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <span>ПОДСИСТЕМА: RECON_V2_CORE</span>
+            <span>СОЕДИНЕНИЕ: ВНУТРЕННИЙ ШЛЮЗ FASTAPI</span>
+        </footer>
+    </div>
+
+    <script>
+        async function executeScan() {
+            const input = document.getElementById('targetInput').value.trim();
+            if (!input) return;
+
+            const status = document.getElementById('sysStatus');
+            status.textContent = 'СИНТЕЗ ДАННЫХ В СЕТИ...';
+            status.className = 'system-status status-busy';
+
+            try {
+                const response = await fetch(`/api/scan?target=${encodeURIComponent(input)}`);
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail || 'Ошибка выполнения');
+                }
+                const data = await response.json();
+                renderTelemetry(data);
+
+                status.textContent = 'ОПЕРАЦИЯ ЗАВЕРШЕНА';
+                status.className = 'system-status status-idle';
+            } catch (e) {
+                status.textContent = 'ОШИБКА ОПРОСА';
+                status.className = 'system-status status-error';
+                alert('Сбой сканирования: ' + e.message);
+            }
+        }
+
+        function renderTelemetry(data) {
+            // Метрики верхнего яруса
+            const geo = data.geo || {};
+            document.getElementById('valIp').textContent = geo.query || (data.dns.A ? data.dns.A[0] : 'Не определён');
+            document.getElementById('valAsn').textContent = geo.as ? `${geo.as.slice(0, 24)}...` : 'Неизвестно';
+            document.getElementById('valGeo').textContent = geo.country ? `${geo.country} (${geo.city || '—'})` : 'Недоступно';
+            document.getElementById('valHttp').textContent = data.http.status_code ? `HTTP ${data.http.status_code}` : 'Отказ';
+
+            // DNS
+            const dnsBody = document.getElementById('dnsBody');
+            dnsBody.innerHTML = '';
+            let totalDns = 0;
+            for (const [rtype, entries] of Object.entries(data.dns)) {
+                entries.forEach(e => {
+                    totalDns++;
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td style="color: var(--cyan); font-weight: bold;">${rtype}</td><td>${e}</td>`;
+                    dnsBody.appendChild(row);
+                });
+            }
+            document.getElementById('dnsCount').textContent = `ЗАПИСЕЙ: ${totalDns}`;
+            document.getElementById('dnsCount').className = totalDns > 0 ? 'badge badge-ok' : 'badge badge-missing';
+
+            // SSL
+            document.getElementById('sslPre').textContent = JSON.stringify(data.ssl, null, 2);
+            document.getElementById('sslStatus').textContent = data.ssl.issuer ? 'ВАЛИДЕН' : 'ОШИБКА';
+            document.getElementById('sslStatus').className = data.ssl.issuer ? 'badge badge-ok' : 'badge badge-missing';
+
+            // HTTP Headers
+            const hBody = document.getElementById('headersBody');
+            hBody.innerHTML = '';
+            const secHeaders = data.http.security_headers || {};
+            let presentCount = 0;
+            for (const [header, val] of Object.entries(secHeaders)) {
+                const row = document.createElement('tr');
+                const isPresent = val !== 'ОТСУТСТВУЕТ';
+                if (isPresent) presentCount++;
+                row.innerHTML = `
+                    <td>${header}</td>
+                    <td><span class="badge ${isPresent ? 'badge-ok' : 'badge-missing'}">${isPresent ? 'АКТИВЕН' : 'ОТСУТСТВУЕТ'}</span></td>
+                `;
+                hBody.appendChild(row);
+            }
+            document.getElementById('secScore').textContent = `ПОКРЫТИЕ: ${presentCount}/5`;
+            document.getElementById('secScore').className = presentCount >= 3 ? 'badge badge-ok' : 'badge badge-warn';
+
+            // Поддомены
+            const subPre = document.getElementById('subdomainsPre');
+            if (data.subdomains && data.subdomains.length > 0) {
+                subPre.textContent = data.subdomains.join('\n');
+                document.getElementById('subCount').textContent = `НАЙДЕНО: ${data.subdomains.length}`;
+                document.getElementById('subCount').className = 'badge badge-ok';
+            } else {
+                subPre.textContent = 'Поддомены не обнаружены или запрос к открытым логам завершился таймаутом.';
+                document.getElementById('subCount').textContent = '0';
+                document.getElementById('subCount').className = 'badge badge-missing';
+            }
+        }
+
+        document.getElementById('targetInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') executeScan();
+        });
+    </script>
+</body>
+</html>
